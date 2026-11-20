@@ -127,6 +127,18 @@ function M.setup(opts)
 
   command("CodexClose", terminal.close, { desc = "Close the Codex session" })
 
+  command("CodexDiff", function()
+    require("codex.review").open()
+  end, { desc = "Show a pending Codex diff" })
+
+  command("CodexDiffAccept", function()
+    require("codex.review").decide("accept")
+  end, { desc = "Accept the pending Codex file change" })
+
+  command("CodexDiffDeny", function()
+    require("codex.review").decide("decline")
+  end, { desc = "Reject the pending Codex file change" })
+
   command("CodexAdd", function(args)
     local path = args.fargs[1] or "%"
     if path == "%" or path == "#" or path:match("^[%%#]:") then

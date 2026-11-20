@@ -11,3 +11,5 @@ mise exec -- nvim -i NONE -l tests/integration/windows.lua /path/to/snacks.nvim 
 ```
 
 For a real CLI check, start Neovim with the configuration in the README and open a file. Open Codex, wait for its prompt, and insert a file and a Visual selection. Check that both appear in the draft and that focus returns to the terminal. Toggle the terminal and verify that the draft is still there.
+
+To check diff review with the real CLI, enable `terminal.diff_review` and run Codex in a scratch project. Ask it to create a file. Verify that the diff opens before the file appears and that `a` writes the file and clears the TUI approval. Ask for another file, use `q` and `:CodexDiff` to reopen the preview, then use `d` and check that the file was never created.

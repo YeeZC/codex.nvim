@@ -18,6 +18,7 @@ description = "Exercise Codex commands in real Neovim without a model connection
 run = [
   "nvim -i NONE -l tests/integration/context.lua",
   "nvim -i NONE -l tests/integration/windows.lua",
+  "nvim -i NONE -l tests/integration/diff_review.lua",
   "nvim --headless -u NONE -i NONE -c 'luafile tests/integration/terminal_focus.lua'",
 ]
 

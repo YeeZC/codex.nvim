@@ -15,5 +15,6 @@
 ---@field cwd_provider? fun(context: CodexCwdContext): string?
 ---@field git_repo_cwd? boolean
 ---@field fix_streamed_paste? boolean|"auto"
+---@field diff_review? boolean
 
 return {}

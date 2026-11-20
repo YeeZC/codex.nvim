@@ -26,6 +26,9 @@ local function finish(state, exit_code)
     return
   end
   state.finished = true
+  if state.review then
+    state.review.close()
+  end
   if session == state then
     session = nil
   end
@@ -156,13 +159,27 @@ local function start(argv, environment, options, frontend)
   vim.bo[buf].swapfile = false
   opening = state
   local ok, why = pcall(function()
+    if options.diff_review and not vim.tbl_contains(argv, "--dangerously-bypass-approvals-and-sandbox") then
+      local review, tui = require("codex.review").start(argv, environment, options.cwd, function()
+        return state.stopping or not api.nvim_buf_is_valid(buf)
+      end)
+      if not review then
+        return
+      end
+      state.review, state.argv = review, tui
+    end
     window.show(state)
     if state.stopping or not api.nvim_buf_is_valid(buf) then
       return
     end
     monitor(state)
     state.job = api.nvim_buf_call(buf, function()
-      return vim.fn.jobstart(argv, { term = true, cwd = options.cwd, env = environment })
+      return vim.fn.jobstart(state.argv, {
+        term = true,
+        cwd = options.cwd,
+        env = environment,
+        on_exit = state.review and state.review.close or nil,
+      })
     end)
     assert(state.job > 0, "Codex command did not start")
     state.launched = vim.uv.hrtime()

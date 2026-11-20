@@ -16,7 +16,10 @@ return {
   name = "codex.nvim",
   main = "codex",
   dependencies = { "folke/snacks.nvim" },
-  cmd = { "Codex", "CodexOpen", "CodexFocus", "CodexClose", "CodexYolo", "CodexSend", "CodexAdd", "CodexTreeAdd" },
+  cmd = {
+    "Codex", "CodexOpen", "CodexFocus", "CodexClose", "CodexYolo", "CodexSend", "CodexAdd", "CodexTreeAdd",
+    "CodexDiff", "CodexDiffAccept", "CodexDiffDeny",
+  },
   opts = {
     auto_add_current_file = true,
     terminal = {
@@ -109,6 +112,22 @@ When `auto_add_current_file` is enabled, Neovim tracks the last named file buffe
 
 The path is inserted at the draft cursor and is sent when you submit the draft. Earlier draft text can be edited in the TUI. For the first prompt after launch, wait for the composer and use `:CodexAdd` or switch to a file and return to Codex.
 
+### Review proposed file changes
+
+Set `terminal.diff_review = true` to preview file changes that Codex sends for approval. Close any running session with `:CodexClose`, then start one with `:CodexOpen`. Review mode uses a local Unix socket and requires a Codex CLI with Unix App Server support, tested with 0.171.0. The session starts with read-only workspace permissions and on-request approval.
+
+The proposal opens as a read-only unified diff. Press `a` to accept the entire request or `d` to reject it. Press `q` to hide the diff and leave the decision pending. A request can include several files. You can also decide in the Codex terminal.
+
+| Command | Behavior |
+| --- | --- |
+| `:CodexDiff` | Reopen the current diff or show the oldest pending diff. |
+| `:CodexDiffAccept` | Approve the request. Codex applies the changes. Save any unsaved edits to affected files first. |
+| `:CodexDiffDeny` | Reject the request and let Codex continue the turn. |
+
+Command approvals still use the terminal. The diff opens only for file changes that Codex sends for human approval. `:CodexYolo` starts without diff review.
+
+Use the `User` events `CodexDiffOpened` and `CodexDiffClosed` to customize the review UI. Both provide `buffer`, `window`, `thread_id`, `turn_id`, `item_id`, and `request_id` in `event.data`. `CodexDiffClosed` also provides a `reason`.
+
 ## Configuration
 
 ```lua
@@ -125,6 +144,7 @@ require("codex").setup({
     auto_close = true,
     git_repo_cwd = false, -- Set true to start Codex in the current file's Git root
     fix_streamed_paste = "auto", -- Coalesce streamed terminal paste on older Neovim releases
+    diff_review = false, -- Open a Neovim diff for Codex file approvals
   },
 })
 ```

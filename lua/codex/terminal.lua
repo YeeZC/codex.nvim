@@ -15,6 +15,7 @@ local defaults = {
   git_repo_cwd = false,
   snacks_win_opts = {},
   fix_streamed_paste = "auto",
+  diff_review = false,
 }
 
 local frontend
@@ -42,7 +43,7 @@ function M.setup(terminal_opts, terminal_cmd, terminal_env)
   vim.validate("terminal.snacks_win_opts", options.snacks_win_opts, "table")
   vim.validate("terminal.cwd", options.cwd, "string", true)
   vim.validate("terminal.cwd_provider", options.cwd_provider, "function", true)
-  for _, key in ipairs({ "auto_close", "auto_insert", "git_repo_cwd", "show_native_term_exit_tip" }) do
+  for _, key in ipairs({ "auto_close", "auto_insert", "git_repo_cwd", "show_native_term_exit_tip", "diff_review" }) do
     vim.validate("terminal." .. key, options[key], "boolean")
   end
   assert(
