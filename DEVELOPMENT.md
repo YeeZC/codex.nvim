@@ -13,3 +13,7 @@ mise exec -- nvim -i NONE -l tests/integration/windows.lua /path/to/snacks.nvim 
 For a real CLI check, start Neovim with the configuration in the README and open a file. Open Codex, wait for its prompt, and insert a file and a Visual selection. Check that both appear in the draft and that focus returns to the terminal. Toggle the terminal and verify that the draft is still there.
 
 For agy and Cursor, repeat the real CLI draft check with `agent = "agy"` and `agent = "cursor"`. Verify multiline context stays in the composer until Enter is pressed. Their native Shift-Enter handling is used. Set `CODEX_TEST_AGENT=agy` or `CODEX_TEST_AGENT=cursor` when running the context test directly, including the Snacks checks above.
+
+## Project website
+
+The GitHub Pages site is a static page in `docs/`. Preview it with `python3 -m http.server 8000 --directory docs` and open `http://localhost:8000`. Changes to `docs/` on `main` deploy automatically through `.github/workflows/pages.yml`; the workflow can also be started manually. Keep the installation example and agent commands aligned with the README.

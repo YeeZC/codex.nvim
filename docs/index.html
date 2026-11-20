@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Run Codex, Antigravity, and Cursor CLI inside Neovim. Bring files and selections into your prompt, in a native split or a Snacks float.">
+    <meta name="theme-color" content="#191a21">
+    <title>codex.nvim — Your editor. Your agent.</title>
+    <link rel="icon" href="favicon.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="style.css">
+    <script src="site.js" defer></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+    <header class="header wrap">
+      <a class="wordmark" href="./" aria-label="codex.nvim home">codex<span>.nvim</span></a>
+      <nav aria-label="Main navigation">
+        <a href="#workflow">Workflow</a>
+        <a href="#install">Install</a>
+        <a href="https://github.com/YeeZC/codex.nvim">GitHub</a>
+      </nav>
+    </header>
+
+    <main id="main">
+      <section class="hero wrap" aria-labelledby="hero-title">
+        <p class="eyebrow">AI coding CLIs, at home in Neovim</p>
+        <h1 id="hero-title">Your editor.<br>Your <em>agent.</em></h1>
+        <div class="hero-bottom">
+          <p class="intro">Keep your code and conversation together. Run Codex, Antigravity, or Cursor in Neovim, and bring the right context into every prompt.</p>
+          <div class="hero-actions">
+            <a class="button" href="#install">Get started</a>
+            <a class="text-link" href="https://github.com/YeeZC/codex.nvim#configuration">Read the docs</a>
+          </div>
+        </div>
+        <div class="agent-strip" aria-label="Supported agents and requirements">
+          <span>Codex</span><span>Antigravity</span><span>Cursor CLI</span>
+          <span class="requirement">Neovim 0.11+ · MIT license</span>
+        </div>
+        <figure class="hero-screen">
+          <a href="screenshots/native-context.png" aria-label="View the native split screenshot at full size">
+            <img src="screenshots/native-context.png" alt="A real Neovim session with selected Lua code on the left and its file path and code in the Codex draft on the right" width="3272" height="1744" fetchpriority="high">
+          </a>
+          <figcaption><span>Native split</span> Your code alongside your prompt. Context stays in the draft until you submit.</figcaption>
+        </figure>
+      </section>
+
+      <section class="workflow wrap section" id="workflow" aria-labelledby="workflow-title">
+        <div class="section-heading">
+          <p class="eyebrow">Stay in the flow</p>
+          <h2 id="workflow-title">Less switching.<br>More context.</h2>
+        </div>
+        <div class="workflow-list">
+          <article>
+            <h3>Bring your editor into the conversation.</h3>
+            <p>Add file paths, directories, or selected code to the prompt. Character, line, and block selections include your unsaved edits.</p>
+            <code>:AgentAdd &nbsp; :AgentSend</code>
+          </article>
+          <article>
+            <h3>Make room when you need it.</h3>
+            <p>Use a native split or an optional Snacks window. Hide the terminal, return to your code, and reopen it with the same session and draft.</p>
+            <code>:Agent &nbsp; :AgentFocus</code>
+          </article>
+          <article>
+            <h3>Keep the CLI you already use.</h3>
+            <p>Choose Codex, Antigravity, or Cursor. Resume the latest saved conversation with one command. Existing <code>:Codex*</code> aliases still work.</p>
+            <code>:AgentResume</code>
+          </article>
+        </div>
+      </section>
+
+      <section class="float-section section" aria-labelledby="float-title">
+        <div class="wrap">
+          <div class="float-heading">
+            <div><p class="eyebrow">Another way to work</p><h2 id="float-title">A little more focus.<br>A floating window.</h2></div>
+            <p>Prefer a conversation over your editor? Use a Snacks float, then toggle it away when it’s time to code.</p>
+          </div>
+          <figure>
+            <a href="screenshots/snacks-float.png" aria-label="View the Snacks float screenshot at full size">
+              <img src="screenshots/snacks-float.png" alt="Codex running in a bordered Snacks floating window over a Neovim README buffer, with a configuration snippet in its draft" width="3272" height="1744" loading="lazy">
+            </a>
+            <figcaption>Snacks.nvim is optional. The native split works without additional plugins.</figcaption>
+          </figure>
+        </div>
+      </section>
+
+      <section class="install wrap section" id="install" aria-labelledby="install-title">
+        <div class="install-intro">
+          <p class="eyebrow">Make yourself at home</p>
+          <h2 id="install-title">One plugin.<br>Your choice of CLI.</h2>
+          <p>Install and log in to your preferred CLI, then add this spec to your lazy.nvim configuration.</p>
+          <p>Requires Neovim 0.11 or newer. This example uses a native split; see the docs for <a href="https://github.com/YeeZC/codex.nvim#lazynvim-with-a-snacks-float">Snacks float configuration</a>.</p>
+          <a class="text-link" href="https://github.com/YeeZC/codex.nvim#configuration">All configuration options</a>
+        </div>
+        <div class="code-panel">
+          <div class="code-toolbar">
+            <label for="agent">Agent</label>
+            <select id="agent">
+              <option value="codex">Codex</option>
+              <option value="agy">Antigravity</option>
+              <option value="cursor">Cursor CLI</option>
+            </select>
+            <button id="copy" type="button" hidden>Copy config</button>
+          </div>
+          <p class="cli-note" id="cli-note">CLI command: <code>codex</code></p>
+          <pre tabindex="0" aria-label="lazy.nvim plugin configuration"><code id="config">return {
+  "YeeZC/codex.nvim",
+  main = "codex",
+  cmd = {
+    "Agent", "AgentOpen", "AgentFocus",
+    "AgentClose", "AgentAdd", "AgentSend",
+    "AgentTreeAdd", "AgentResume", "AgentYolo",
+  },
+  opts = {
+    agent = "codex",
+    auto_add_current_file = true,
+    terminal = { provider = "native" },
+  },
+}</code></pre>
+          <p class="copy-status" id="copy-status" role="status" aria-live="polite"></p>
+          <noscript><p class="no-script">The configuration above uses Codex. Set <code>agent</code> to <code>"agy"</code> or <code>"cursor"</code> to use another CLI.</p></noscript>
+        </div>
+      </section>
+
+      <section class="commands wrap section" aria-labelledby="commands-title">
+        <div class="commands-heading"><p class="eyebrow">The everyday commands</p><h2 id="commands-title">From code to conversation.</h2></div>
+        <dl>
+          <div><dt><code>:AgentOpen</code></dt><dd>Open or focus the terminal.</dd></div>
+          <div><dt><code>:AgentAdd</code></dt><dd>Add the current file path to your draft.</dd></div>
+          <div><dt><code>:AgentSend</code></dt><dd>Add a Visual selection or an Ex range.</dd></div>
+          <div><dt><code>:AgentTreeAdd</code></dt><dd>Add paths from a supported file explorer.</dd></div>
+          <div><dt><code>:Agent</code></dt><dd>Show or hide the terminal without stopping it.</dd></div>
+          <div><dt><code>:AgentClose</code></dt><dd>Stop the active session.</dd></div>
+        </dl>
+        <p class="session-note">One active session at a time. Close it before switching agents or resuming a saved conversation. Context is inserted as bracketed paste and stays in your draft until you submit it.</p>
+      </section>
+    </main>
+
+    <footer class="footer wrap">
+      <a class="wordmark" href="./">codex<span>.nvim</span></a>
+      <p>Built for your Neovim workflow.</p>
+      <div><a href="https://github.com/YeeZC/codex.nvim">Source</a><a href="https://github.com/YeeZC/codex.nvim/releases">Releases</a><a href="https://github.com/YeeZC/codex.nvim/blob/main/LICENSE">MIT license</a></div>
+    </footer>
+  </body>
+</html>

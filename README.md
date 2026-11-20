@@ -2,6 +2,8 @@
 
 Run Codex, Antigravity (`agy`), or Cursor CLI in a Neovim split or a Snacks window, and compose prompts with files and editor selections.
 
+[Project website](https://yeezc.github.io/codex.nvim/) · [Releases](https://github.com/YeeZC/codex.nvim/releases)
+
 ## Preview
 
 Add file paths with `:AgentAdd` and selected code with `:AgentSend`. Context stays in the CLI's draft until you press Enter to submit it.
