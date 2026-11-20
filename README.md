@@ -103,6 +103,18 @@ Use `:CodexAdd docs/Release\ Notes.md` to add a specific path that contains spac
 
 Use `:CodexClose` to stop an existing session. Run `:CodexOpen resume --last` to resume the most recent saved session. Run `:CodexYolo` to start a session with approvals and sandboxing disabled.
 
+### Set default CLI arguments
+
+Set `default_args` in `setup()` or in your lazy.nvim spec's `opts`. Each list item is one CLI argument, including values that contain spaces. Defaults are placed after `terminal_cmd` and before arguments given to a command such as `:CodexOpen resume --last`. These settings apply when starting a new session.
+
+For example, this makes `:Codex` and `:CodexOpen` start in YOLO mode by default.
+
+```lua
+require("codex").setup({
+  default_args = { "--yolo" },
+})
+```
+
 ### Track the current file
 
 When `auto_add_current_file` is enabled, Neovim tracks the last named file buffer you visited. Returning to the running Codex terminal pastes its absolute path as `Current Neovim file: "…"` when the path has changed since the last automatic paste in that session. You can switch through several files before returning to Codex and only the latest path will be inserted. Unnamed and special buffers leave the tracked path alone.
@@ -114,6 +126,7 @@ The path is inserted at the draft cursor and is sent when you submit the draft. 
 ```lua
 require("codex").setup({
   terminal_cmd = "codex", -- Optional CLI arguments or a custom executable
+  default_args = {},
   focus_after_send = true,
   auto_add_current_file = false, -- Set true to add the current file when returning to Codex
   default_keymaps = true,

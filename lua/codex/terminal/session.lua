@@ -36,7 +36,14 @@ local function finish(state, exit_code)
     window.dismiss(state, false)
   end
   if state.stopping or (state.frontend == "snacks" and state.options.auto_close) then
-    delete_buffer(state.buf)
+    if state.job and state.job > 0 then
+      -- The process can exit before the PTY finishes pending writes.
+      vim.defer_fn(function()
+        delete_buffer(state.buf)
+      end, 10)
+    else
+      delete_buffer(state.buf)
+    end
   end
   if
     not state.stopping

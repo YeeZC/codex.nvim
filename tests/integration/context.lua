@@ -22,6 +22,7 @@ local ok, err = xpcall(function()
   original_buf = vim.api.nvim_get_current_buf()
 
   local opts = {
+    default_args = { "--yolo", "-c", [[fixture="literal $HOME; text"]] },
     terminal_cmd = "sh -c " .. vim.fn.shellescape([[
         output=$1
         arguments=$2
@@ -53,7 +54,7 @@ local ok, err = xpcall(function()
     return table.concat(vim.api.nvim_buf_get_lines(terminal_buf, 0, -1, false), "\n"):find("READY", 1, true) ~= nil
   end))
 
-  assert(vim.deep_equal(vim.fn.readfile(arguments), { "" }))
+  assert(vim.deep_equal(vim.fn.readfile(arguments), opts.default_args))
   vim.cmd.Codex()
   assert(vim.api.nvim_get_current_buf() == original_buf)
   vim.cmd.CodexYolo()
@@ -120,7 +121,7 @@ local ok, err = xpcall(function()
   assert(
     vim.deep_equal(
       vim.fn.readfile(arguments),
-      { "--dangerously-bypass-approvals-and-sandbox", "--model", "fixture model; literal" }
+      { "--yolo", "-c", [[fixture="literal $HOME; text"]], "--model", "fixture model; literal" }
     )
   )
   local channel = vim.bo[terminal_buf].channel
@@ -157,6 +158,15 @@ local ok, err = xpcall(function()
         .. "\n\n\27[201~END",
     ("Unexpected automatic context in %q"):format(received)
   )
+
+  vim.cmd.CodexClose()
+  codex.setup(vim.tbl_extend("force", opts, { default_args = { "--search" } }))
+  vim.cmd.CodexYolo()
+  terminal_buf = vim.api.nvim_get_current_buf()
+  assert(vim.wait(3000, function()
+    return table.concat(vim.api.nvim_buf_get_lines(terminal_buf, 0, -1, false), "\n"):find("READY", 1, true) ~= nil
+  end))
+  assert(vim.deep_equal(vim.fn.readfile(arguments), { "--search", "--dangerously-bypass-approvals-and-sandbox" }))
 end, debug.traceback)
 
 if vim.fn.exists(":CodexClose") == 2 then

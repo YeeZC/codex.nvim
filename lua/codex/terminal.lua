@@ -19,14 +19,21 @@ local defaults = {
 
 local frontend
 local config
-local command
+local base_argv
 local env
+local yolo_flag = "--dangerously-bypass-approvals-and-sandbox"
 
-function M.setup(terminal_opts, terminal_cmd, terminal_env)
+function M.setup(terminal_opts, terminal_cmd, terminal_env, default_args)
   terminal_opts = terminal_opts or {}
   vim.validate("terminal", terminal_opts, "table")
   vim.validate("terminal_cmd", terminal_cmd, "string", true)
   vim.validate("env", terminal_env, "table", true)
+  vim.validate("default_args", default_args, "table", true)
+  default_args = default_args or {}
+  assert(vim.islist(default_args), "default_args must be a list of strings")
+  for _, arg in ipairs(default_args) do
+    vim.validate("default_args item", arg, "string")
+  end
   local options = vim.tbl_extend("force", defaults, terminal_opts)
   assert(
     options.provider == "auto" or options.provider == "native" or options.provider == "snacks",
@@ -49,8 +56,8 @@ function M.setup(terminal_opts, terminal_cmd, terminal_env)
     options.fix_streamed_paste == "auto" or type(options.fix_streamed_paste) == "boolean",
     "terminal.fix_streamed_paste must be auto or a boolean"
   )
-  local executable = terminal_cmd or "codex"
-  assert(executable:find("%S"), "terminal_cmd must contain a command")
+  local argv = utils.parse_command(terminal_cmd or "codex")
+  assert(argv[1] and argv[1] ~= "", "terminal_cmd must contain a command")
   local options_env = vim.deepcopy(terminal_env or {})
   for key, value in pairs(options_env) do
     assert(type(key) == "string" and type(value) == "string", "env must contain string keys and values")
@@ -69,15 +76,34 @@ function M.setup(terminal_opts, terminal_cmd, terminal_env)
     end
   end
   require("codex.terminal.paste_fix").apply(options.fix_streamed_paste)
-  config, command = options, executable
+  config, base_argv = options, vim.list_extend(argv, default_args)
   env = next(options_env) and options_env or vim.empty_dict()
+end
+
+local function launch_args(args, yolo)
+  local argv = vim.list_extend(vim.list_slice(base_argv), utils.parse_command(args or ""))
+  if yolo then
+    local insert_at = #base_argv + 1
+    for index = 2, #argv do
+      local arg = argv[index]
+      if arg == "--" then
+        insert_at = math.min(insert_at, index)
+        break
+      end
+      if arg == yolo_flag or arg == "--yolo" then
+        return argv
+      end
+    end
+    table.insert(argv, insert_at, yolo_flag)
+  end
+  return argv
 end
 
 ---Show, focus or toggle the terminal. Arguments apply when starting a session.
 ---@param action "open"|"simple_toggle"|"focus_toggle"
 ---@param args? string
-function M.show(action, args)
-  local launch_command = args and args ~= "" and (command .. " " .. args) or command
+---@param yolo? boolean
+function M.show(action, args, yolo)
   local file = vim.bo.buftype == "" and vim.api.nvim_buf_get_name(0) or ""
   local effective_config = vim.tbl_extend("force", {}, config)
   effective_config.cwd = cwd.resolve(config, {
@@ -85,7 +111,7 @@ function M.show(action, args)
     file_dir = file ~= "" and vim.fn.fnamemodify(file, ":h") or nil,
     cwd = vim.fn.getcwd(),
   })
-  session.show(action, utils.parse_command(launch_command), env, effective_config, frontend)
+  session.show(action, launch_args(args, yolo), env, effective_config, frontend)
 end
 
 function M.close()

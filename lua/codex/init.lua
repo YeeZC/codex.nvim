@@ -90,7 +90,7 @@ local function setup_keymaps(enabled)
 end
 
 ---Configure Codex and register the editor commands.
----@param opts? {terminal?: CodexTerminalConfig, terminal_cmd?: string, env?: table<string, string>, focus_after_send?: boolean, auto_add_current_file?: boolean, default_keymaps?: boolean, log_level?: string}
+---@param opts? {terminal?: CodexTerminalConfig, terminal_cmd?: string, default_args?: string[], env?: table<string, string>, focus_after_send?: boolean, auto_add_current_file?: boolean, default_keymaps?: boolean, log_level?: string}
 function M.setup(opts)
   assert(vim.fn.has("nvim-0.11") == 1, "Codex.nvim requires Neovim 0.11 or newer")
   vim.validate("opts", opts, "table", true)
@@ -99,7 +99,7 @@ function M.setup(opts)
   vim.validate("auto_add_current_file", opts.auto_add_current_file, "boolean", true)
   vim.validate("default_keymaps", opts.default_keymaps, "boolean", true)
   logger.setup({ log_level = opts.log_level or "info" })
-  terminal.setup(opts.terminal, opts.terminal_cmd, opts.env)
+  terminal.setup(opts.terminal, opts.terminal_cmd, opts.env, opts.default_args)
   setup_current_file(opts.auto_add_current_file)
   local focus = opts.focus_after_send ~= false
   local command = vim.api.nvim_create_user_command
@@ -121,8 +121,7 @@ function M.setup(opts)
       logger.warn("terminal", "Run :CodexClose before starting :CodexYolo.")
       return
     end
-    local flags = "--dangerously-bypass-approvals-and-sandbox"
-    terminal.show("open", args.args == "" and flags or flags .. " " .. args.args)
+    terminal.show("open", args.args, true)
   end, { nargs = "*", desc = "Start Codex without approvals or sandboxing" })
 
   command("CodexClose", terminal.close, { desc = "Close the Codex session" })
