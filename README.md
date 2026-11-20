@@ -1,10 +1,32 @@
 # codex.nvim
 
-Run the Codex CLI in a Neovim split or a Snacks window, and compose prompts with files and editor selections.
+Run Codex, Antigravity (`agy`), or Cursor CLI in a Neovim split or a Snacks window, and compose prompts with files and editor selections.
 
 ## Install
 
-Install [Codex CLI](https://learn.chatgpt.com/docs/cli) and make `codex` available on `PATH`. The plugin requires Neovim 0.11 or newer.
+Install your selected CLI and make its command available on `PATH`: `codex`, `agy`, or Cursor’s `agent`. Complete the CLI’s login first. The plugin requires Neovim 0.11 or newer.
+
+## Choose an agent
+
+```lua
+require("codex").setup({
+  agent = "cursor", -- "codex" (default), "agy", or "cursor"
+  auto_add_current_file = true,
+  terminal = { provider = "native" },
+})
+```
+
+For lazy.nvim, put `agent` in `opts`. `terminal.provider` selects the window backend independently. An explicit `terminal_cmd` overrides the executable, for example `terminal_cmd = "cursor-agent"`; `agent` still selects the CLI-specific parameters.
+
+Use `:AgentOpen`, `:Agent`, `:AgentFocus`, `:AgentClose`, `:AgentAdd`, `:AgentTreeAdd`, and `:AgentSend` for the selected CLI. Every existing `:Codex*` command remains available as an alias, and the default keymaps continue to work. `:AgentResume [args]` (also `:CodexResume`) resumes the latest saved conversation. `:AgentYolo [args]` starts with the selected CLI’s permission-bypass option. Arguments apply only when starting a session.
+
+| Agent | Default executable | Resume latest | YOLO argument |
+| --- | --- | --- | --- |
+| `codex` | `codex` | `resume --last` | `--dangerously-bypass-approvals-and-sandbox` |
+| `agy` | `agy` | `--continue` | `--dangerously-skip-permissions` |
+| `cursor` | `agent` | `--continue` | `--force` |
+
+These permission flags follow each CLI’s own semantics; Cursor’s `--force` does not also disable its sandbox. The plugin manages one active session. Close it with `:AgentClose` before changing `agent`, resuming a conversation, or starting a YOLO session. Context is always inserted using bracketed paste and stays in the draft until you submit it. The Snacks Shift-Enter workaround is installed only for Codex; other CLIs receive their native key input.
 
 ### lazy.nvim with a Snacks float
 
@@ -16,7 +38,7 @@ return {
   name = "codex.nvim",
   main = "codex",
   dependencies = { "folke/snacks.nvim" },
-  cmd = { "Codex", "CodexOpen", "CodexFocus", "CodexClose", "CodexYolo", "CodexSend", "CodexAdd", "CodexTreeAdd" },
+  cmd = { "Codex", "CodexOpen", "CodexFocus", "CodexClose", "CodexYolo", "CodexSend", "CodexAdd", "CodexTreeAdd", "CodexResume", "Agent", "AgentOpen", "AgentFocus", "AgentClose", "AgentYolo", "AgentResume", "AgentSend", "AgentAdd", "AgentTreeAdd" },
   opts = {
     auto_add_current_file = true,
     terminal = {
@@ -94,6 +116,7 @@ Use `:CodexAdd docs/Release\ Notes.md` to add a specific path that contains spac
 | `:CodexOpen [args]` | Open or focus the terminal. |
 | `:CodexFocus [args]` | Focus Codex from the editor or hide the terminal when it is focused. |
 | `:CodexClose` | Stop the Codex session. |
+| `:CodexResume [args]` | Resume the latest saved session for the selected agent. |
 | `:CodexYolo [args]` | Start a new session with `--dangerously-bypass-approvals-and-sandbox`. Close any running session first with `:CodexClose`. |
 | `:CodexAdd [path]` | Insert a file or directory path into the draft. The current file is the default. Spaces are supported. |
 | `:CodexTreeAdd` | Insert paths from nvim-tree, neo-tree, oil.nvim, mini.files, netrw, or a Snacks picker. |
@@ -107,7 +130,7 @@ Use `:CodexClose` to stop an existing session. Run `:CodexOpen resume --last` to
 
 Set `default_args` in `setup()` or in your lazy.nvim spec's `opts`. Each list item is one CLI argument, including values that contain spaces. Defaults are placed after `terminal_cmd` and before arguments given to a command such as `:CodexOpen resume --last`. These settings apply when starting a new session.
 
-For example, this makes `:Codex` and `:CodexOpen` start in YOLO mode by default.
+For Codex, this makes `:Codex` and `:CodexOpen` start in YOLO mode by default. Use the selected CLI’s arguments when configuring other agents.
 
 ```lua
 require("codex").setup({
@@ -125,7 +148,8 @@ The path is inserted at the draft cursor and is sent when you submit the draft. 
 
 ```lua
 require("codex").setup({
-  terminal_cmd = "codex", -- Optional CLI arguments or a custom executable
+  agent = "codex", -- "codex", "agy", or "cursor"
+  -- terminal_cmd = "codex", -- Optional executable override, with CLI arguments
   default_args = {},
   focus_after_send = true,
   auto_add_current_file = false, -- Set true to add the current file when returning to Codex

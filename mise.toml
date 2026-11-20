@@ -17,6 +17,9 @@ run = "stylua --check lua plugin tests dev-config.lua"
 description = "Exercise Codex commands in real Neovim without a model connection"
 run = [
   "nvim -i NONE -l tests/integration/context.lua",
+  "CODEX_TEST_AGENT=agy nvim -i NONE -l tests/integration/context.lua",
+  "CODEX_TEST_AGENT=cursor nvim -i NONE -l tests/integration/context.lua",
+  "nvim -i NONE -l tests/integration/agents.lua",
   "nvim -i NONE -l tests/integration/windows.lua",
   "nvim --headless -u NONE -i NONE -c 'luafile tests/integration/terminal_focus.lua'",
 ]

@@ -1,5 +1,6 @@
 --- Runs the Codex CLI in a managed Neovim terminal.
 local M = {}
+local agents = require("codex.agents")
 local cwd = require("codex.cwd")
 local logger = require("codex.logger")
 local session = require("codex.terminal.session")
@@ -21,9 +22,16 @@ local frontend
 local config
 local base_argv
 local env
-local yolo_flag = "--dangerously-bypass-approvals-and-sandbox"
+local agent
 
-function M.setup(terminal_opts, terminal_cmd, terminal_env, default_args)
+function M.setup(terminal_opts, terminal_cmd, terminal_env, default_args, agent_name)
+  local selected = agents.get(agent_name)
+  local running = session.buffer(config or {})
+  local saved = running and vim.b[running].codex_session
+  assert(
+    not running or (saved and (saved.agent or "codex") == selected.name),
+    "Close the running session with :AgentClose before changing agent"
+  )
   terminal_opts = terminal_opts or {}
   vim.validate("terminal", terminal_opts, "table")
   vim.validate("terminal_cmd", terminal_cmd, "string", true)
@@ -56,7 +64,7 @@ function M.setup(terminal_opts, terminal_cmd, terminal_env, default_args)
     options.fix_streamed_paste == "auto" or type(options.fix_streamed_paste) == "boolean",
     "terminal.fix_streamed_paste must be auto or a boolean"
   )
-  local argv = utils.parse_command(terminal_cmd or "codex")
+  local argv = utils.parse_command(terminal_cmd or selected.command)
   assert(argv[1] and argv[1] ~= "", "terminal_cmd must contain a command")
   local options_env = vim.deepcopy(terminal_env or {})
   for key, value in pairs(options_env) do
@@ -76,34 +84,19 @@ function M.setup(terminal_opts, terminal_cmd, terminal_env, default_args)
     end
   end
   require("codex.terminal.paste_fix").apply(options.fix_streamed_paste)
+  options.agent = selected.name
+  options.agent_label = selected.label
+  agent = selected
   config, base_argv = options, vim.list_extend(argv, default_args)
   env = next(options_env) and options_env or vim.empty_dict()
-end
-
-local function launch_args(args, yolo)
-  local argv = vim.list_extend(vim.list_slice(base_argv), utils.parse_command(args or ""))
-  if yolo then
-    local insert_at = #base_argv + 1
-    for index = 2, #argv do
-      local arg = argv[index]
-      if arg == "--" then
-        insert_at = math.min(insert_at, index)
-        break
-      end
-      if arg == yolo_flag or arg == "--yolo" then
-        return argv
-      end
-    end
-    table.insert(argv, insert_at, yolo_flag)
-  end
-  return argv
 end
 
 ---Show, focus or toggle the terminal. Arguments apply when starting a session.
 ---@param action "open"|"simple_toggle"|"focus_toggle"
 ---@param args? string
 ---@param yolo? boolean
-function M.show(action, args, yolo)
+---@param resume? boolean
+function M.show(action, args, yolo, resume)
   local file = vim.bo.buftype == "" and vim.api.nvim_buf_get_name(0) or ""
   local effective_config = vim.tbl_extend("force", {}, config)
   effective_config.cwd = cwd.resolve(config, {
@@ -111,7 +104,13 @@ function M.show(action, args, yolo)
     file_dir = file ~= "" and vim.fn.fnamemodify(file, ":h") or nil,
     cwd = vim.fn.getcwd(),
   })
-  session.show(action, launch_args(args, yolo), env, effective_config, frontend)
+  session.show(
+    action,
+    agents.launch_args(agent, base_argv, utils.parse_command(args or ""), yolo, resume),
+    env,
+    effective_config,
+    frontend
+  )
 end
 
 function M.close()
@@ -129,7 +128,7 @@ end
 function M.insert(value, focus)
   local buf = M.get_active_terminal_bufnr()
   if not buf then
-    logger.warn("terminal", "Open Codex with :CodexOpen and wait for the prompt before sending context.")
+    logger.warn("terminal", "Open the agent with :AgentOpen and wait for the prompt before sending context.")
     return false
   end
   local channel = vim.bo[buf].channel
@@ -142,7 +141,7 @@ function M.insert(value, focus)
   end)
   local ok, written = pcall(vim.fn.chansend, channel, "\27[200~" .. printable .. "\27[201~")
   if not ok or written == 0 then
-    logger.warn("terminal", "Could not write to the Codex terminal.")
+    logger.warn("terminal", "Could not write to the agent terminal.")
     return false
   end
   if focus then

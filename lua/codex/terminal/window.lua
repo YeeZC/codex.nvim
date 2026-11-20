@@ -136,7 +136,7 @@ local function attach_snacks(state)
       height = 0,
       relative = "editor",
       bo = { filetype = "codex" },
-      keys = {
+      keys = state.options.agent == "codex" and {
         codex_new_line = {
           "<S-CR>",
           function()
@@ -150,7 +150,7 @@ local function attach_snacks(state)
           mode = "t",
           desc = "New line",
         },
-      },
+      } or {},
     },
     user,
     {

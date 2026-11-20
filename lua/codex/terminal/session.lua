@@ -52,7 +52,7 @@ local function finish(state, exit_code)
     and state.frontend == "snacks"
     and state.options.auto_close
   then
-    logger.error("terminal", ("Codex exited with status %d."):format(exit_code))
+    logger.error("terminal", ("%s exited with status %d."):format(state.options.agent_label or "Codex", exit_code))
   end
 end
 
@@ -101,7 +101,11 @@ local function adopt(options)
         job = vim.bo[buf].channel,
         win = window.find(buf),
         frontend = saved.frontend,
-        options = vim.tbl_extend("force", options, { auto_close = saved.auto_close }),
+        options = vim.tbl_extend(
+          "force",
+          options,
+          { auto_close = saved.auto_close, agent = saved.agent or "codex", agent_label = saved.agent_label or "Codex" }
+        ),
       }
       monitor(state)
       return state
@@ -171,13 +175,14 @@ local function start(argv, environment, options, frontend)
     state.job = api.nvim_buf_call(buf, function()
       return vim.fn.jobstart(argv, { term = true, cwd = options.cwd, env = environment })
     end)
-    assert(state.job > 0, "Codex command did not start")
+    assert(state.job > 0, "Agent command did not start")
     state.launched = vim.uv.hrtime()
     vim.bo[buf].bufhidden = "hide"
     if frontend == "native" then
       vim.bo[buf].filetype = "codex"
     end
-    vim.b[buf][marker] = { frontend = frontend, auto_close = options.auto_close }
+    vim.b[buf][marker] =
+      { frontend = frontend, auto_close = options.auto_close, agent = options.agent, agent_label = options.agent_label }
     require("codex.utils").map_terminal_suspend(buf)
   end)
   opening = nil
@@ -190,7 +195,7 @@ local function start(argv, environment, options, frontend)
       finish(state)
     end
     if not ok then
-      logger.error("terminal", "Could not open Codex. " .. tostring(why))
+      logger.error("terminal", "Could not open " .. (options.agent_label or "Codex") .. ". " .. tostring(why))
     end
     return
   end
@@ -214,6 +219,10 @@ function M.show(action, argv, environment, options, frontend)
     return
   end
   local state = active(options)
+  if state and (state.options.agent or "codex") ~= options.agent then
+    logger.warn("terminal", "Run :AgentClose before changing agent.")
+    return
+  end
   if state and state.frontend ~= frontend then
     M.close(options)
     state = active(options)
@@ -232,7 +241,7 @@ function M.show(action, argv, environment, options, frontend)
     state.options = vim.tbl_extend("force", options, { auto_close = state.options.auto_close })
     local ok, err = pcall(window.show, state)
     if not ok then
-      logger.error("terminal", "Could not show Codex. " .. tostring(err))
+      logger.error("terminal", "Could not show " .. (options.agent_label or "Codex") .. ". " .. tostring(err))
     end
   end
 end

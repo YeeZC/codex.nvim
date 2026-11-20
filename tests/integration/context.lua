@@ -6,6 +6,10 @@ if snacks_path then
   vim.opt.runtimepath:append(snacks_path)
 end
 
+local agent = vim.env.CODEX_TEST_AGENT or "codex"
+local adapter = require("codex.agents").get(agent)
+local yolo_alias = adapter.yolo_aliases[#adapter.yolo_aliases]
+
 local root
 local original_buf
 local ok, err = xpcall(function()
@@ -22,7 +26,8 @@ local ok, err = xpcall(function()
   original_buf = vim.api.nvim_get_current_buf()
 
   local opts = {
-    default_args = { "--yolo", "-c", [[fixture="literal $HOME; text"]] },
+    agent = agent,
+    default_args = { yolo_alias, "-c", [[fixture="literal $HOME; text"]] },
     terminal_cmd = "sh -c " .. vim.fn.shellescape([[
         output=$1
         arguments=$2
@@ -49,12 +54,29 @@ local ok, err = xpcall(function()
   assert(vim.bo[terminal_buf].filetype == "codex")
   if snacks_path then
     assert(vim.api.nvim_win_get_config(0).relative ~= "", "Expected a Snacks float")
+    local mapped = vim.iter(vim.api.nvim_buf_get_keymap(terminal_buf, "t")):any(function(key)
+      return key.desc == "New line"
+    end)
+    assert(mapped == (agent == "codex"), "Only Codex should receive the Shift-Enter workaround")
   end
   assert(vim.wait(3000, function()
     return table.concat(vim.api.nvim_buf_get_lines(terminal_buf, 0, -1, false), "\n"):find("READY", 1, true) ~= nil
   end))
 
   assert(vim.deep_equal(vim.fn.readfile(arguments), opts.default_args))
+  local changed = vim.tbl_extend("force", opts, { agent = agent == "codex" and "agy" or "codex" })
+  assert(not pcall(codex.setup, changed), "Changing agent must preserve the running session")
+  assert(require("codex.terminal").get_active_terminal_bufnr() == terminal_buf)
+  assert(vim.fn.exists(":AgentOpen") == 2)
+  assert(vim.fn.exists(":AgentResume") == 2)
+  for _, module in ipairs({ "codex", "codex.terminal", "codex.terminal.session" }) do
+    package.loaded[module] = nil
+  end
+  codex = require("codex")
+  assert(not pcall(codex.setup, changed), "Reload must preserve the running agent identity")
+  codex.setup(opts)
+  vim.cmd.AgentOpen()
+  assert(require("codex.terminal").get_active_terminal_bufnr() == terminal_buf)
   vim.cmd.Codex()
   assert(vim.api.nvim_get_current_buf() == original_buf)
   vim.cmd.CodexYolo()
@@ -121,7 +143,7 @@ local ok, err = xpcall(function()
   assert(
     vim.deep_equal(
       vim.fn.readfile(arguments),
-      { "--yolo", "-c", [[fixture="literal $HOME; text"]], "--model", "fixture model; literal" }
+      { yolo_alias, "-c", [[fixture="literal $HOME; text"]], "--model", "fixture model; literal" }
     )
   )
   local channel = vim.bo[terminal_buf].channel
@@ -166,7 +188,18 @@ local ok, err = xpcall(function()
   assert(vim.wait(3000, function()
     return table.concat(vim.api.nvim_buf_get_lines(terminal_buf, 0, -1, false), "\n"):find("READY", 1, true) ~= nil
   end))
-  assert(vim.deep_equal(vim.fn.readfile(arguments), { "--search", "--dangerously-bypass-approvals-and-sandbox" }))
+  assert(vim.deep_equal(vim.fn.readfile(arguments), { "--search", unpack(adapter.yolo_args) }))
+  vim.cmd.AgentClose()
+  codex.setup(vim.tbl_extend("force", opts, { default_args = {} }))
+  vim.cmd.AgentResume()
+  terminal_buf = vim.api.nvim_get_current_buf()
+  assert(vim.wait(3000, function()
+    return table.concat(vim.api.nvim_buf_get_lines(terminal_buf, 0, -1, false), "\n"):find("READY", 1, true) ~= nil
+  end))
+  assert(vim.deep_equal(vim.fn.readfile(arguments), adapter.resume_args))
+  vim.cmd.Agent()
+  vim.cmd.AgentOpen()
+  assert(vim.api.nvim_get_current_buf() == terminal_buf)
 end, debug.traceback)
 
 if vim.fn.exists(":CodexClose") == 2 then
@@ -180,4 +213,6 @@ if root then
 end
 
 assert(ok, err)
-print("PASS Codex context and terminal lifecycle (" .. (snacks_path and "Snacks float" or "native split") .. ")")
+print(
+  "PASS " .. agent .. " context and terminal lifecycle (" .. (snacks_path and "Snacks float" or "native split") .. ")"
+)

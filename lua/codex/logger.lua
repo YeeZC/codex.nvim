@@ -1,12 +1,14 @@
 local levels = { "ERROR", "WARN", "INFO", "DEBUG", "TRACE" }
 local M = { levels = {} }
 local threshold = 3
+local label = "Codex"
 
 local function write(level, area, pieces, compact)
   if level > threshold then
     return
   end
-  local prefix = area and ("[Codex] [" .. area .. "]") or "[Codex]"
+  local name = label
+  local prefix = "[" .. name .. "]" .. (area and (" [" .. area .. "]") or "")
   local message = prefix .. " [" .. levels[level] .. "] " .. table.concat(pieces, " ")
   vim.schedule(function()
     if compact then
@@ -23,7 +25,11 @@ local function write(level, area, pieces, compact)
       end
     end
     if level <= 2 then
-      vim.notify(message, vim.log.levels[levels[level]], { title = "Codex " .. (level == 1 and "Error" or "Warning") })
+      vim.notify(
+        message,
+        vim.log.levels[levels[level]],
+        { title = name .. " " .. (level == 1 and "Error" or "Warning") }
+      )
     else
       vim.api.nvim_echo({ { message } }, true, {})
     end
@@ -41,6 +47,7 @@ for rank, label in ipairs(levels) do
 end
 
 function M.setup(options)
+  label = options.label or "Codex"
   threshold = M.levels[(options.log_level or "INFO"):upper()] or M.levels.INFO
 end
 

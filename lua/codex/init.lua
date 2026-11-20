@@ -50,7 +50,7 @@ local function setup_current_file(enabled)
   })
 end
 
-local function setup_keymaps(enabled)
+local function setup_keymaps(enabled, label)
   local group = vim.api.nvim_create_augroup("CodexKeymaps", { clear = true })
   if not enabled then
     return
@@ -58,7 +58,7 @@ local function setup_keymaps(enabled)
 
   local function map(mode, lhs, command, desc, buf)
     pcall(vim.keymap.set, mode, lhs, "<Cmd>" .. command .. "<CR>", {
-      desc = desc,
+      desc = desc:gsub("Codex", label),
       buffer = buf,
       unique = true,
     })
@@ -90,7 +90,7 @@ local function setup_keymaps(enabled)
 end
 
 ---Configure Codex and register the editor commands.
----@param opts? {terminal?: CodexTerminalConfig, terminal_cmd?: string, default_args?: string[], env?: table<string, string>, focus_after_send?: boolean, auto_add_current_file?: boolean, default_keymaps?: boolean, log_level?: string}
+---@param opts? {agent?: "codex"|"agy"|"cursor", terminal?: CodexTerminalConfig, terminal_cmd?: string, default_args?: string[], env?: table<string, string>, focus_after_send?: boolean, auto_add_current_file?: boolean, default_keymaps?: boolean, log_level?: string}
 function M.setup(opts)
   assert(vim.fn.has("nvim-0.11") == 1, "Codex.nvim requires Neovim 0.11 or newer")
   vim.validate("opts", opts, "table", true)
@@ -98,11 +98,16 @@ function M.setup(opts)
   vim.validate("focus_after_send", opts.focus_after_send, "boolean", true)
   vim.validate("auto_add_current_file", opts.auto_add_current_file, "boolean", true)
   vim.validate("default_keymaps", opts.default_keymaps, "boolean", true)
-  logger.setup({ log_level = opts.log_level or "info" })
-  terminal.setup(opts.terminal, opts.terminal_cmd, opts.env, opts.default_args)
+  local agent = require("codex.agents").get(opts.agent)
+  terminal.setup(opts.terminal, opts.terminal_cmd, opts.env, opts.default_args, agent.name)
+  logger.setup({ log_level = opts.log_level or "info", label = agent.label })
   setup_current_file(opts.auto_add_current_file)
   local focus = opts.focus_after_send ~= false
-  local command = vim.api.nvim_create_user_command
+  local function command(name, callback, options)
+    options.desc = options.desc:gsub("Codex", agent.label)
+    vim.api.nvim_create_user_command(name, callback, options)
+    vim.api.nvim_create_user_command(name:gsub("^Codex", "Agent"), callback, options)
+  end
 
   command("Codex", function(args)
     terminal.show("simple_toggle", args.args)
@@ -118,13 +123,21 @@ function M.setup(opts)
 
   command("CodexYolo", function(args)
     if terminal.get_active_terminal_bufnr() then
-      logger.warn("terminal", "Run :CodexClose before starting :CodexYolo.")
+      logger.warn("terminal", "Run :AgentClose before starting :AgentYolo.")
       return
     end
     terminal.show("open", args.args, true)
-  end, { nargs = "*", desc = "Start Codex without approvals or sandboxing" })
+  end, { nargs = "*", desc = "Start Codex with its permission-bypass option" })
 
   command("CodexClose", terminal.close, { desc = "Close the Codex session" })
+
+  command("CodexResume", function(args)
+    if terminal.get_active_terminal_bufnr() then
+      logger.warn("terminal", "Run :AgentClose before starting :AgentResume.")
+      return
+    end
+    terminal.show("open", args.args, false, true)
+  end, { nargs = "*", desc = "Resume the latest Codex session" })
 
   command("CodexAdd", function(args)
     local path = args.fargs[1] or "%"
@@ -188,7 +201,7 @@ function M.setup(opts)
     terminal.insert(context, focus)
   end, { range = true, desc = "Insert selected buffer text into the Codex prompt" })
 
-  setup_keymaps(opts.default_keymaps ~= false)
+  setup_keymaps(opts.default_keymaps ~= false, agent.label)
 end
 
 return M
