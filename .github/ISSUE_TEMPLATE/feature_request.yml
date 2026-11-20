@@ -1,0 +1,18 @@
+name: Propose an editor workflow
+description: Describe a change that would help you use Codex in Neovim
+labels: [enhancement]
+body:
+  - type: textarea
+    id: workflow
+    attributes:
+      label: What are you trying to do?
+      description: Describe the editing workflow and the steps it takes today.
+    validations:
+      required: true
+  - type: textarea
+    id: result
+    attributes:
+      label: What would you like to happen?
+      description: Include the expected command, key, or configuration if you have one in mind.
+    validations:
+      required: true

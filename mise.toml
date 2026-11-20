@@ -1,0 +1,22 @@
+[settings]
+lockfile = true
+
+[tools]
+neovim = "0.12.3"
+stylua = "2.5.2"
+
+[tasks.format]
+description = "Format Lua sources"
+run = "stylua lua plugin tests dev-config.lua"
+
+[tasks.check]
+description = "Check Lua syntax and formatting"
+run = "stylua --check lua plugin tests dev-config.lua"
+
+[tasks.test]
+description = "Exercise Codex commands in real Neovim without a model connection"
+run = ["nvim -i NONE -l tests/integration/context.lua", "nvim -i NONE -l tests/integration/windows.lua"]
+
+[tasks.all]
+description = "Format, check, and test the plugin"
+run = "mise run format && mise run check && mise run test"

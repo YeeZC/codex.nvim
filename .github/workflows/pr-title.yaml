@@ -1,0 +1,28 @@
+name: PR Title
+
+on:
+  pull_request:
+    types: [opened, edited, reopened, ready_for_review, synchronize]
+  workflow_dispatch:
+    inputs:
+      title:
+        type: string
+        required: true
+        description: Title to check
+
+permissions: {}
+
+jobs:
+  conventional-title:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check title format
+        shell: bash
+        env:
+          TITLE: ${{ inputs.title || github.event.pull_request.title }}
+        run: |
+          allowed='^(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert)(\([^)]+\))?!?: .+$'
+          if [[ ! "$TITLE" =~ $allowed ]]; then
+            printf '%s\n' 'Use a Conventional Commit title, such as fix(terminal): restore editor focus.'
+            exit 1
+          fi

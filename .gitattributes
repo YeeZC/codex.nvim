@@ -1,0 +1,12 @@
+* text=auto eol=lf
+*.json text
+*.lua text
+*.md text
+*.toml text
+*.vim text
+*.yaml text
+*.yml text
+
+/.github export-ignore
+/.gitattributes export-ignore
+/.gitignore export-ignore

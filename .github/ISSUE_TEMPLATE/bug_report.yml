@@ -1,0 +1,27 @@
+name: Report a Codex problem
+description: Report a terminal, mapping, or editor context problem
+labels: [bug]
+body:
+  - type: textarea
+    id: sequence
+    attributes:
+      label: Steps and observed behavior
+      description: Include the command or mapping, what was visible, and where focus ended up.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected result
+    validations:
+      required: true
+  - type: textarea
+    id: versions
+    attributes:
+      label: Versions and terminal provider
+      description: Include Neovim, Codex CLI, the plugin revision, and the native or Snacks configuration.
+  - type: textarea
+    id: output
+    attributes:
+      label: Error output
+      render: text
