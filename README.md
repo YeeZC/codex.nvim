@@ -2,6 +2,16 @@
 
 Run Codex, Antigravity (`agy`), or Cursor CLI in a Neovim split or a Snacks window, and compose prompts with files and editor selections.
 
+## Preview
+
+Add file paths with `:AgentAdd` and selected code with `:AgentSend`. Context stays in the CLI's draft until you press Enter to submit it.
+
+![Codex in a native Neovim split with a file path and selected Lua code in the prompt draft](docs/screenshots/native-context.png)
+
+Use a Snacks float to compose a prompt over your editor. Toggle the window with `:Agent` to return to your files while the session keeps running.
+
+![Codex in a Snacks floating window with a configuration snippet in the prompt draft](docs/screenshots/snacks-float.png)
+
 ## Install
 
 Install your selected CLI and make its command available on `PATH`: `codex`, `agy`, or Cursor’s `agent`. Complete the CLI’s login first. The plugin requires Neovim 0.11 or newer.
