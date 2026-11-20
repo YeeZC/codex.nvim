@@ -121,7 +121,7 @@ require("codex").setup({
     provider = "auto", -- Use Snacks if available, otherwise use a native split
     split_side = "right",
     split_width_percentage = 0.30,
-    auto_insert = true,
+    auto_insert = true, -- Enter Terminal mode when opening or returning to Codex
     auto_close = true,
     git_repo_cwd = false, -- Set true to start Codex in the current file's Git root
     fix_streamed_paste = "auto", -- Coalesce streamed terminal paste on older Neovim releases

@@ -5,7 +5,7 @@ local window = require("codex.terminal.window")
 local marker = "codex_session"
 local session
 local opening
-local exit_group
+local session_group
 local displayed_tip = false
 
 local function live(job)
@@ -50,10 +50,30 @@ local function finish(state, exit_code)
 end
 
 local function monitor(state)
-  exit_group = exit_group or api.nvim_create_augroup("CodexManagedSession", { clear = false })
-  api.nvim_clear_autocmds({ group = exit_group, buffer = state.buf })
+  session_group = session_group or api.nvim_create_augroup("CodexManagedSession", { clear = false })
+  api.nvim_clear_autocmds({ group = session_group, buffer = state.buf })
+  api.nvim_create_autocmd("BufEnter", {
+    group = session_group,
+    buffer = state.buf,
+    desc = "Restore input when returning to the Codex terminal",
+    callback = function()
+      if state.options.auto_insert then
+        vim.schedule(function()
+          -- A later autocmd can move focus away before the window switch settles.
+          if
+            api.nvim_get_current_buf() == state.buf
+            and not state.stopping
+            and not state.finished
+            and live(state.job)
+          then
+            vim.cmd.startinsert()
+          end
+        end)
+      end
+    end,
+  })
   api.nvim_create_autocmd("TermClose", {
-    group = exit_group,
+    group = session_group,
     buffer = state.buf,
     once = true,
     callback = function()
